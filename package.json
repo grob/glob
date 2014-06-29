@@ -10,6 +10,9 @@
         "web": "http://github.com/grob/"
     },
     "contributors": [],
+    "dependencies": {
+        "fnmatch": ">= 1.0"
+    },
     "repositories": [{
         "type": "git",
         "url": "https://github.com/grob/glob.git"
