@@ -1,0 +1,26 @@
+{
+    "name": "glob",
+    "version": "1.0.0",
+    "description": "Unix style pathname pattern expansion",
+    "keywords": ["pathname", "file", "directory", "pattern", "matching", "expansion"],
+    "homepage": "https://github.com/grob/glob/",
+    "author": {
+        "name": "Robert Gaggl",
+        "email": "robert@nomatic.org",
+        "web": "http://github.com/grob/"
+    },
+    "contributors": [],
+    "repositories": [{
+        "type": "git",
+        "url": "https://github.com/grob/glob.git"
+    }],
+    "bugs": "http://github.com/grob/glob/issues",
+    "licenses": [{
+        "type": "Apache License Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+    }],
+    "engines": {
+        "ringojs": ">= 0.10"
+    },
+    "main": "./lib/glob"
+}
