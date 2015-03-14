@@ -18,7 +18,25 @@ var makeFile = function() {
 };
 
 var getAbsolutePath = function() {
-    return fs.resolve(fs.join(WORK_DIR, fs.join.apply(null, arguments)));
+    return changeSeparator(fs.resolve(fs.join(WORK_DIR, fs.join.apply(null, arguments))));
+};
+
+var changeSeparator = function(path) {
+    if (separator !== "/") {
+        return path.replace(separator, "/", "g");
+    }
+    return path;
+};
+
+var fixSeparator = function(arg) {
+    if (Array.isArray(arg)) {
+        return arg.map(changeSeparator);
+    }
+    return changeSeparator(arg);
+};
+
+var execTest = function(pattern, expected, comment) {
+    equals(glob(pattern), fixSeparator(expected), comment);
 };
 
 var equals = function(arr1, arr2, comment) {
@@ -81,32 +99,32 @@ exports.tearDown = function() {
 exports.testGlob = function() {
     var tests = [
         {
-            "pattern": ["a"],
+            "pattern": "a",
             "expected": ["a"]
         },
         {
-            "pattern": ["a", "D"],
+            "pattern": "a/D",
             "expected": ["a/D"]
         },
         {
-            "pattern": ["aab"],
+            "pattern": "aab",
             "expected": ["aab"]
         },
         {
-            "pattern": ["zymurgy"],
+            "pattern": "zymurgy",
             "expected": []
         },
         {
-            "pattern": ["*"],
+            "pattern": "*",
             "expected": list()
         }
     ];
     tests.forEach(function(test, idx) {
-        equals(glob(test.pattern.join(separator)), test.expected, "Relative test " + idx);
+        execTest(test.pattern, test.expected, "Relative test " + idx);
     });
     fs.changeWorkingDirectory(TMP_DIR);
     tests.forEach(function(test, idx) {
-        equals(glob(getAbsolutePath.apply(null, test.pattern)), test.expected.map(function(path) {
+        execTest(getAbsolutePath(test.pattern), test.expected.map(function(path) {
             return getAbsolutePath(path);
         }), "Absolute path test " + idx);
     });
@@ -115,24 +133,24 @@ exports.testGlob = function() {
 exports.testGlobList = function() {
     var tests = [
         {
-            "pattern": ["{aab,aac}", "F"],
+            "pattern": "{aab,aac}/F",
             "expected": [
                 "aab/F", "aac/F"
             ]
         },
         {
-            "pattern": ["aa{b,c,x}", "*"],
+            "pattern": "aa{b,c,x}/*",
             "expected": [
                 "aab/F", "aac/F"
             ]
         }
     ];
     tests.forEach(function(test, idx) {
-        equals(glob(test.pattern.join(separator)), test.expected, "Relative test " + idx);
+        equals(glob(test.pattern), test.expected, "Relative test " + idx);
     });
     fs.changeWorkingDirectory(TMP_DIR);
     tests.forEach(function(test, idx) {
-        equals(glob(getAbsolutePath.apply(null, test.pattern)), test.expected.map(function(path) {
+        equals(glob(getAbsolutePath(test.pattern)), test.expected.map(function(path) {
             return getAbsolutePath(path);
         }), "Absolute path test " + idx);
     });
@@ -141,80 +159,80 @@ exports.testGlobList = function() {
 exports.testGlobOneDirectory = function() {
     var tests = [
         {
-            "pattern": ["a*"],
+            "pattern": "a*",
             "expected": ["a", "aab", "aaa", "aac"]
         },
         {
-            "pattern": ["*a"],
+            "pattern": "*a",
             "expected": ["a", "aaa"]
         },
         {
-            "pattern": [".*"],
+            "pattern": ".*",
             "expected": [".aa", ".bb"]
         },
         {
-            "pattern": ["?aa"],
+            "pattern": "?aa",
             "expected": ["aaa"]
         },
         {
-            "pattern": ["aa?"],
+            "pattern": "aa?",
             "expected": ["aaa", "aab", "aac"]
         },
         {
-            "pattern": ["aa[ab]"],
+            "pattern": "aa[ab]",
             "expected": ["aaa", "aab"]
         },
         {
-            "pattern": ["q*"],
+            "pattern": "q*",
             "expected": []
         }
     ];
     tests.forEach(function(test, idx) {
-        equals(glob(test.pattern.join(separator)), test.expected, "Test " + idx);
+        equals(glob(test.pattern), test.expected, "Test " + idx);
     });
 };
 
 exports.testGlobNestedDirectory = function() {
     var tests = [
         {
-            "pattern": ["a", "bcd", "E*"],
+            "pattern": "a/bcd/E*",
             "expected": ["a/bcd/EF"]
         },
         {
-            "pattern": ["a", "bcd", "*g"],
+            "pattern": "a/bcd/*g",
             "expected": ["a/bcd/efg"]
         }
     ];
     tests.forEach(function(test, idx) {
-        equals(glob(test.pattern.join(separator)), test.expected, "Test " + idx);
+        equals(glob(test.pattern), test.expected, "Test " + idx);
     });
 };
 
 exports.testGlobDirectoryNames = function() {
     var tests = [
         {
-            "pattern": ["*", "D"],
+            "pattern": "*/D",
             "expected": ["a/D"]
         },
         {
-            "pattern": ["*", "*a"],
+            "pattern": "*/*a",
             "expected": []
         },
         {
-            "pattern": ["a", "*", "*", "*a"],
+            "pattern": "a/*/*/*a",
             "expected": ["a/bcd/efg/ha"]
         },
         {
-            "pattern": ["a*", "F"],
+            "pattern": "a*/F",
             "expected": ["aab/F", "aac/F"]
         },
         {
-            "pattern": ["?a?", "*F"],
+            "pattern": "?a?/*F",
             "expected": ["aaa/zzzF", "aab/F", "aac/F"]
         }
     ];
     tests.forEach(function(test, idx) {
-        equals(glob(test.pattern.join(separator)), test.expected, "Test " + idx);
+        equals(glob(test.pattern), test.expected, "Test " + idx);
     });
 };
 
@@ -239,14 +257,14 @@ exports.testGlobDirectoryWithTrailingSlash = function() {
         }
     ];
     tests.forEach(function(test, idx) {
-        equals(glob(test.pattern + separator), test.expected, "Test " + idx);
+        equals(glob(test.pattern + "/"), test.expected, "Test " + idx);
     });
 };
 
 exports.testGlobStar = function() {
     var tests = [
         {
-            "pattern": ["**"],
+            "pattern": "**",
             "expected": [
                 "ZZZ",
                 "a",
@@ -264,7 +282,7 @@ exports.testGlobStar = function() {
             ]
         },
         {
-            "pattern": ["*/**"],
+            "pattern": "*/**",
             "expected": [
                 "a",
                 "a/D",
@@ -281,7 +299,7 @@ exports.testGlobStar = function() {
             ]
         },
         {
-            "pattern": ["./**/*"],
+            "pattern": "./**/*",
             "expected": [
                 "./ZZZ",
                 "./a",
@@ -299,7 +317,7 @@ exports.testGlobStar = function() {
             ]
         },
         {
-            "pattern": ["**/"],
+            "pattern": "**/",
             "expected": [
                 "a/",
                 "a/bcd/",
@@ -310,23 +328,23 @@ exports.testGlobStar = function() {
             ]
         },
         {
-            "pattern": ["./**/[gh]"],
+            "pattern": "./**/[gh]",
             "expected": []
         },
         {
-            "pattern": ["./**/[DF]"],
+            "pattern": "./**/[DF]",
             "expected": ["./a/D", "./aab/F", "./aac/F"]
         }
     ];
     tests.forEach(function(test, idx) {
-        equals(glob(test.pattern.join(separator)), test.expected, "Test " + idx);
+        equals(glob(test.pattern), test.expected, "Test " + idx);
     });
 };
 
 exports.testGlobStarAbsolute = function() {
     var tests = [
         {
-            "pattern": ["**"],
+            "pattern": "**",
             "expected": [
                 "",
                 "ZZZ",
@@ -345,7 +363,7 @@ exports.testGlobStarAbsolute = function() {
             ]
         },
         {
-            "pattern": ["*/**"],
+            "pattern": "*/**",
             "expected": [
                 "a",
                 "a/D",
@@ -362,7 +380,7 @@ exports.testGlobStarAbsolute = function() {
             ]
         },
         {
-            "pattern": ["**/*"],
+            "pattern": "**/*",
             "expected": [
                 "ZZZ",
                 "a",
@@ -385,7 +403,7 @@ exports.testGlobStarAbsolute = function() {
         var expected = test.expected.map(function(path) {
             return getAbsolutePath(path);
         });
-        equals(glob(getAbsolutePath.apply(null, test.pattern)), expected,
+        equals(glob(getAbsolutePath(test.pattern)), expected,
             "Absolute path test " + idx);
     });
 };
