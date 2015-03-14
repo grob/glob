@@ -8,7 +8,7 @@ var WORK_DIR = fs.join(TMP_DIR, "glob_test");
 var {separator} = java.io.File;
 
 var makeFile = function() {
-    var path = getPath.apply(null, arguments);
+    var path = getAbsolutePath.apply(null, arguments);
     var directory = fs.directory(path);
     if (!fs.exists(directory)) {
         fs.makeTree(directory);
@@ -17,26 +17,22 @@ var makeFile = function() {
     assert.isTrue(fs.isFile(path));
 };
 
-var getPath = function() {
-    return fs.join(WORK_DIR, fs.join.apply(null, arguments));
+var getAbsolutePath = function() {
+    return fs.resolve(fs.join(WORK_DIR, fs.join.apply(null, arguments)));
 };
 
-var doGlob = function() {
-    return glob(getPath.apply(null, arguments));
-};
-
-var equals = function(arr1, arr2) {
+var equals = function(arr1, arr2, comment) {
     if (!Array.isArray(arr1)) {
         arr1 = [arr1];
     }
     if (!Array.isArray(arr2)) {
         arr2 = [arr2];
     }
-    assert.deepEqual(arr1.sort(), arr2.sort());
+    assert.deepEqual(arr1, arr2.sort(), comment || "");
 };
 
 var list = function() {
-    var path = getPath.apply(null, arguments);
+    var path = Array.prototype.join.call(arguments, separator);
     return fs.list(path).filter(function(file) {
         return file.charAt(0) !== ".";
     }).map(function(file) {
@@ -44,10 +40,29 @@ var list = function() {
     });
 };
 
+/**
+ *
+ * WORK_DIR
+ * - /a/D
+ * - /aab/F
+ * - /aac/F
+ * - /.aa/G
+ * - /.bb/H
+ * - /aaa/zzzF
+ * - /ZZZ
+ * - /a/bcd/EF
+ * - /a/bcd/efg/ha
+ *
+ */
 exports.setUp = function() {
+    if (fs.exists(WORK_DIR)) {
+        fs.removeTree(WORK_DIR);
+    }
     fs.makeDirectory(WORK_DIR);
+    fs.changeWorkingDirectory(WORK_DIR);
     makeFile("a", "D");
     makeFile('aab', 'F');
+    makeFile('aac', 'F');
     makeFile('.aa', 'G');
     makeFile('.bb', 'H');
     makeFile('aaa', 'zzzF');
@@ -64,40 +79,313 @@ exports.tearDown = function() {
 };
 
 exports.testGlob = function() {
-    equals(doGlob("a"), getPath("a"));
-    equals(doGlob("a", "D"), getPath("a", "D"));
-    equals(doGlob("aab"), getPath("aab"));
-    equals(doGlob("zymurgy"), []);
-    equals(doGlob("*"), list());
+    var tests = [
+        {
+            "pattern": ["a"],
+            "expected": ["a"]
+        },
+        {
+            "pattern": ["a", "D"],
+            "expected": ["a/D"]
+        },
+        {
+            "pattern": ["aab"],
+            "expected": ["aab"]
+        },
+        {
+            "pattern": ["zymurgy"],
+            "expected": []
+        },
+        {
+            "pattern": ["*"],
+            "expected": list()
+        }
+    ];
+    tests.forEach(function(test, idx) {
+        equals(glob(test.pattern.join(separator)), test.expected, "Relative test " + idx);
+    });
+    fs.changeWorkingDirectory(TMP_DIR);
+    tests.forEach(function(test, idx) {
+        equals(glob(getAbsolutePath.apply(null, test.pattern)), test.expected.map(function(path) {
+            return getAbsolutePath(path);
+        }), "Absolute path test " + idx);
+    });
+};
+
+exports.testGlobList = function() {
+    var tests = [
+        {
+            "pattern": ["{aab,aac}", "F"],
+            "expected": [
+                "aab/F", "aac/F"
+            ]
+        },
+        {
+            "pattern": ["aa{b,c,x}", "*"],
+            "expected": [
+                "aab/F", "aac/F"
+            ]
+        }
+    ];
+    tests.forEach(function(test, idx) {
+        equals(glob(test.pattern.join(separator)), test.expected, "Relative test " + idx);
+    });
+    fs.changeWorkingDirectory(TMP_DIR);
+    tests.forEach(function(test, idx) {
+        equals(glob(getAbsolutePath.apply(null, test.pattern)), test.expected.map(function(path) {
+            return getAbsolutePath(path);
+        }), "Absolute path test " + idx);
+    });
 };
 
 exports.testGlobOneDirectory = function() {
-    equals(doGlob("a*"), [getPath("a"), getPath("aab"), getPath("aaa")]);
-    equals(doGlob("*a"), [getPath("a"), getPath("aaa")]);
-    equals(doGlob(".*"), [getPath(".aa"), getPath(".bb")]);
-    equals(doGlob("?aa"), [getPath("aaa")]);
-    equals(doGlob("aa?"), [getPath("aaa"), getPath("aab")]);
-    equals(doGlob("aa[ab]"), [getPath("aaa"), getPath("aab")]);
-    equals(doGlob("q*"), []);
+    var tests = [
+        {
+            "pattern": ["a*"],
+            "expected": ["a", "aab", "aaa", "aac"]
+        },
+        {
+            "pattern": ["*a"],
+            "expected": ["a", "aaa"]
+        },
+        {
+            "pattern": [".*"],
+            "expected": [".aa", ".bb"]
+        },
+        {
+            "pattern": ["?aa"],
+            "expected": ["aaa"]
+        },
+        {
+            "pattern": ["aa?"],
+            "expected": ["aaa", "aab", "aac"]
+        },
+        {
+            "pattern": ["aa[ab]"],
+            "expected": ["aaa", "aab"]
+        },
+        {
+            "pattern": ["q*"],
+            "expected": []
+        }
+    ];
+    tests.forEach(function(test, idx) {
+        equals(glob(test.pattern.join(separator)), test.expected, "Test " + idx);
+    });
 };
 
 exports.testGlobNestedDirectory = function() {
-    equals(doGlob("a", "bcd", "E*"), [getPath("a", "bcd", "EF")]);
-    equals(doGlob("a", "bcd", "*g"), [getPath("a", "bcd", "efg")]);
+    var tests = [
+        {
+            "pattern": ["a", "bcd", "E*"],
+            "expected": ["a/bcd/EF"]
+        },
+        {
+            "pattern": ["a", "bcd", "*g"],
+            "expected": ["a/bcd/efg"]
+        }
+    ];
+    tests.forEach(function(test, idx) {
+        equals(glob(test.pattern.join(separator)), test.expected, "Test " + idx);
+    });
 };
 
 exports.testGlobDirectoryNames = function() {
-    equals(doGlob("*", "D"), [getPath("a", "D")]);
-    equals(doGlob("*", "*a"), []);
-    equals(doGlob("a", "*", "*", "*a"), [getPath("a", "bcd", "efg", "ha")]);
-    equals(doGlob("?a?", "*F"), [getPath("aaa", "zzzF"), getPath("aab", "F")]);
+    var tests = [
+        {
+            "pattern": ["*", "D"],
+            "expected": ["a/D"]
+        },
+        {
+            "pattern": ["*", "*a"],
+            "expected": []
+        },
+        {
+            "pattern": ["a", "*", "*", "*a"],
+            "expected": ["a/bcd/efg/ha"]
+        },
+        {
+            "pattern": ["a*", "F"],
+            "expected": ["aab/F", "aac/F"]
+        },
+        {
+            "pattern": ["?a?", "*F"],
+            "expected": ["aaa/zzzF", "aab/F", "aac/F"]
+        }
+    ];
+    tests.forEach(function(test, idx) {
+        equals(glob(test.pattern.join(separator)), test.expected, "Test " + idx);
+    });
 };
 
 exports.testGlobDirectoryWithTrailingSlash = function() {
     // Patterns ending with a slash shouldn't match non-dirs
-    equals(glob(getPath("Z*Z") + separator), []);
-    equals(glob(getPath("ZZZ") + separator), []);
-    // When there is a wildcard pattern which ends with separator, glob()
-    // doesn't blow up.
-    equals(glob(getPath("aa*") + separator), [getPath("aab"), getPath("aaa")]);
+    var tests = [
+        {
+            "pattern": "*ZZ",
+            "expected": []
+        },
+        {
+            "pattern": "Z*Z",
+            "expected": []
+        },
+        {
+            "pattern": "ZZZ",
+            "expected": []
+        },
+        {
+            "pattern": "aa*",
+            "expected": ["aab", "aaa", "aac"]
+        }
+    ];
+    tests.forEach(function(test, idx) {
+        equals(glob(test.pattern + separator), test.expected, "Test " + idx);
+    });
+};
+
+exports.testGlobStar = function() {
+    var tests = [
+        {
+            "pattern": ["**"],
+            "expected": [
+                "ZZZ",
+                "a",
+                "a/D",
+                "a/bcd",
+                "a/bcd/EF",
+                "a/bcd/efg",
+                "a/bcd/efg/ha",
+                "aaa",
+                "aaa/zzzF",
+                "aab",
+                "aab/F",
+                "aac",
+                "aac/F"
+            ]
+        },
+        {
+            "pattern": ["*/**"],
+            "expected": [
+                "a",
+                "a/D",
+                "a/bcd",
+                "a/bcd/EF",
+                "a/bcd/efg",
+                "a/bcd/efg/ha",
+                "aaa",
+                "aaa/zzzF",
+                "aab",
+                "aab/F",
+                "aac",
+                "aac/F"
+            ]
+        },
+        {
+            "pattern": ["./**/*"],
+            "expected": [
+                "./ZZZ",
+                "./a",
+                "./a/D",
+                "./a/bcd",
+                "./a/bcd/EF",
+                "./a/bcd/efg",
+                "./a/bcd/efg/ha",
+                "./aaa",
+                "./aaa/zzzF",
+                "./aab",
+                "./aab/F",
+                "./aac",
+                "./aac/F"
+            ]
+        },
+        {
+            "pattern": ["**/"],
+            "expected": [
+                "a/",
+                "a/bcd/",
+                "a/bcd/efg/",
+                "aaa/",
+                "aab/",
+                "aac/"
+            ]
+        },
+        {
+            "pattern": ["./**/[gh]"],
+            "expected": []
+        },
+        {
+            "pattern": ["./**/[DF]"],
+            "expected": ["./a/D", "./aab/F", "./aac/F"]
+        }
+    ];
+    tests.forEach(function(test, idx) {
+        equals(glob(test.pattern.join(separator)), test.expected, "Test " + idx);
+    });
+};
+
+exports.testGlobStarAbsolute = function() {
+    var tests = [
+        {
+            "pattern": ["**"],
+            "expected": [
+                "",
+                "ZZZ",
+                "a",
+                "a/D",
+                "a/bcd",
+                "a/bcd/EF",
+                "a/bcd/efg",
+                "a/bcd/efg/ha",
+                "aaa",
+                "aaa/zzzF",
+                "aab",
+                "aab/F",
+                "aac",
+                "aac/F"
+            ]
+        },
+        {
+            "pattern": ["*/**"],
+            "expected": [
+                "a",
+                "a/D",
+                "a/bcd",
+                "a/bcd/EF",
+                "a/bcd/efg",
+                "a/bcd/efg/ha",
+                "aaa",
+                "aaa/zzzF",
+                "aab",
+                "aab/F",
+                "aac",
+                "aac/F"
+            ]
+        },
+        {
+            "pattern": ["**/*"],
+            "expected": [
+                "ZZZ",
+                "a",
+                "a/D",
+                "a/bcd",
+                "a/bcd/EF",
+                "a/bcd/efg",
+                "a/bcd/efg/ha",
+                "aaa",
+                "aaa/zzzF",
+                "aab",
+                "aab/F",
+                "aac",
+                "aac/F"
+            ]
+        }
+    ];
+    fs.changeWorkingDirectory(TMP_DIR);
+    tests.forEach(function(test, idx) {
+        var expected = test.expected.map(function(path) {
+            return getAbsolutePath(path);
+        });
+        equals(glob(getAbsolutePath.apply(null, test.pattern)), expected,
+            "Absolute path test " + idx);
+    });
 };
