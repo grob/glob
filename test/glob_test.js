@@ -419,3 +419,48 @@ exports.testGlobStarAbsolute = function() {
             "Absolute path test " + idx);
     });
 };
+
+exports.testIgnore = function() {
+    var tests = [
+        {
+            "pattern": "**",
+            "expected": [
+                "ZZZ",
+                "a/D",
+                "a/bcd",
+                "a/bcd/EF",
+                "a/bcd/efg",
+                "a/bcd/efg/ha",
+                "aaa",
+                "aaa/zzzF",
+                "aab",
+                "aab/F",
+                "aac",
+                "aac/F"
+            ],
+            "options": {"ignore": "a"}
+        },
+        {
+            "pattern": "a/**/*",
+            "expected": [
+                "a/D",
+                "a/bcd/EF",
+                "a/bcd/efg",
+                "a/bcd/efg/ha"
+            ],
+            "options": {"ignore": "a/bcd"}
+        },
+        {
+            "pattern": "a/**/*",
+            "expected": [
+                "a/bcd/EF",
+                "a/bcd/efg",
+                "a/bcd/efg/ha"
+            ],
+            "options": {"ignore": "a/*"}
+        }
+    ];
+    tests.forEach(function(test, idx) {
+        equals(glob(test.pattern, test.options), test.expected, "Test " + idx);
+    });
+};
