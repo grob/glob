@@ -334,10 +334,22 @@ exports.testGlobStar = function() {
         {
             "pattern": "./**/[DF]",
             "expected": ["./a/D", "./aab/F", "./aac/F"]
+        },
+        // options.dot = true
+        {
+            "pattern": "./**/[GH]",
+            "expected": ["./.aa/G", "./.bb/H"],
+            "options": {"dot": true}
+        },
+        // options.globstar = false
+        {
+            "pattern": "./**",
+            "expected": ["./ZZZ", "./a", "./aaa", "./aab", "./aac"],
+            "options": {"globstar": false}
         }
     ];
     tests.forEach(function(test, idx) {
-        equals(glob(test.pattern), test.expected, "Test " + idx);
+        equals(glob(test.pattern, test.options), test.expected, "Test " + idx);
     });
 };
 
