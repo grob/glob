@@ -1,7 +1,8 @@
 var assert = require("assert");
+var system = require("system");
 var fs = require("fs");
 
-var {glob} = require("../lib/glob");
+var glob = require("../lib/glob");
 
 var TMP_DIR = java.lang.System.getProperty("java.io.tmpdir");
 var WORK_DIR = fs.join(TMP_DIR, "glob_test");
@@ -464,3 +465,7 @@ exports.testIgnore = function() {
         equals(glob(test.pattern, test.options), test.expected, "Test " + idx);
     });
 };
+
+if (require.main == module.id) {
+    system.exit(require('test').run(exports));
+}
