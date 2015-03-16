@@ -1,8 +1,8 @@
 {
     "name": "glob",
-    "version": "1.0.0",
-    "description": "Unix style pathname pattern expansion",
-    "keywords": ["pathname", "file", "directory", "pattern", "matching", "expansion"],
+    "version": "0.9",
+    "description": "Unix style glob pattern expansion",
+    "keywords": ["glob", "path", "file", "directory", "pattern", "matching", "expansion"],
     "homepage": "https://github.com/grob/glob/",
     "author": {
         "name": "Robert Gaggl",
@@ -11,7 +11,7 @@
     },
     "contributors": [],
     "dependencies": {
-        "fnmatch": ">= 1.0"
+        "fnmatch": ">= 0.9"
     },
     "repositories": [{
         "type": "git",
