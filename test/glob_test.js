@@ -41,10 +41,6 @@ var fixSeparator = function(arg) {
     return changeSeparator(arg);
 };
 
-var execTest = function(pattern, expected, comment) {
-    equals(glob(pattern), fixSeparator(expected), comment);
-};
-
 var equals = function(arr1, arr2, comment) {
     if (!Array.isArray(arr1)) {
         arr1 = [arr1];
@@ -126,12 +122,12 @@ exports.testGlob = function() {
         }
     ];
     tests.forEach(function(test, idx) {
-        execTest(test.pattern, test.expected, "Relative test " + idx);
+        equals(glob(test.pattern), fixSeparator(test.expected), "Relative test " + idx);
     });
     changeWorkingDirectory(TMP_DIR);
     tests.forEach(function(test, idx) {
-        execTest(getAbsolutePath(test.pattern), test.expected.map(function(path) {
-            return getAbsolutePath(path);
+        equals(glob(getAbsolutePath(test.pattern)), test.expected.map(function(path) {
+            return getAbsolutePath(fixSeparator(path));
         }), "Absolute path test " + idx);
     });
 };
