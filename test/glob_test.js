@@ -19,7 +19,8 @@ var makeFile = function() {
 };
 
 var getAbsolutePath = function() {
-    return changeSeparator(fs.resolve(fs.join(WORK_DIR, fs.join.apply(null, arguments))));
+    Array.prototype.unshift.call(arguments, WORK_DIR);
+    return changeSeparator(fs.resolve(fs.join.apply(null, arguments)));
 };
 
 var changeSeparator = function(path) {
@@ -27,6 +28,10 @@ var changeSeparator = function(path) {
         return path.replace(separator, "/", "g");
     }
     return path;
+};
+
+var changeWorkingDirectory = function(path) {
+    java.lang.System.setProperty('user.dir', path);
 };
 
 var fixSeparator = function(arg) {
@@ -52,7 +57,7 @@ var equals = function(arr1, arr2, comment) {
 
 var list = function() {
     var path = Array.prototype.join.call(arguments, separator);
-    return fs.list(path).filter(function(file) {
+    return fs.list(path || fs.workingDirectory()).filter(function(file) {
         return file.charAt(0) !== ".";
     }).map(function(file) {
         return fs.join(path, file);
@@ -78,7 +83,7 @@ exports.setUp = function() {
         fs.removeTree(WORK_DIR);
     }
     fs.makeDirectory(WORK_DIR);
-    fs.changeWorkingDirectory(WORK_DIR);
+    changeWorkingDirectory(WORK_DIR);
     makeFile("a", "D");
     makeFile('aab', 'F');
     makeFile('aac', 'F');
@@ -123,7 +128,7 @@ exports.testGlob = function() {
     tests.forEach(function(test, idx) {
         execTest(test.pattern, test.expected, "Relative test " + idx);
     });
-    fs.changeWorkingDirectory(TMP_DIR);
+    changeWorkingDirectory(TMP_DIR);
     tests.forEach(function(test, idx) {
         execTest(getAbsolutePath(test.pattern), test.expected.map(function(path) {
             return getAbsolutePath(path);
@@ -149,7 +154,7 @@ exports.testGlobList = function() {
     tests.forEach(function(test, idx) {
         equals(glob(test.pattern), test.expected, "Relative test " + idx);
     });
-    fs.changeWorkingDirectory(TMP_DIR);
+    changeWorkingDirectory(TMP_DIR);
     tests.forEach(function(test, idx) {
         equals(glob(getAbsolutePath(test.pattern)), test.expected.map(function(path) {
             return getAbsolutePath(path);
@@ -411,7 +416,7 @@ exports.testGlobStarAbsolute = function() {
             ]
         }
     ];
-    fs.changeWorkingDirectory(TMP_DIR);
+    changeWorkingDirectory(TMP_DIR);
     tests.forEach(function(test, idx) {
         var expected = test.expected.map(function(path) {
             return getAbsolutePath(path);
