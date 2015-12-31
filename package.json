@@ -1,6 +1,6 @@
 {
     "name": "glob",
-    "version": "0.9",
+    "version": "0.9.1",
     "description": "Unix style glob pattern expansion",
     "keywords": ["glob", "path", "file", "directory", "pattern", "matching", "expansion"],
     "homepage": "https://github.com/grob/glob/",
@@ -23,7 +23,7 @@
         "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
     }],
     "engines": {
-        "ringojs": ">= 0.10"
+        "ringojs": ">= 0.12"
     },
     "main": "./lib/glob"
 }
