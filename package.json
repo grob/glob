@@ -1,6 +1,6 @@
 {
     "name": "glob",
-    "version": "0.9.1",
+    "version": "1.0.0",
     "description": "Unix style glob pattern expansion",
     "keywords": ["glob", "path", "file", "directory", "pattern", "matching", "expansion"],
     "homepage": "https://github.com/grob/glob/",

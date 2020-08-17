@@ -1,16 +1,16 @@
-var assert = require("assert");
-var system = require("system");
-var fs = require("fs");
+const assert = require("assert");
+const system = require("system");
+const fs = require("fs");
 
-var glob = require("../lib/glob");
+const glob = require("../lib/glob");
 
-var TMP_DIR = java.lang.System.getProperty("java.io.tmpdir");
-var WORK_DIR = fs.join(TMP_DIR, "glob_test");
-var {separator} = java.io.File;
+const TMP_DIR = java.lang.System.getProperty("java.io.tmpdir");
+const WORK_DIR = fs.join(TMP_DIR, "glob_test");
+const {separator} = java.io.File;
 
-var makeFile = function() {
-    var path = getAbsolutePath.apply(null, arguments);
-    var directory = fs.directory(path);
+const makeFile = function() {
+    const path = getAbsolutePath.apply(null, arguments);
+    const directory = fs.directory(path);
     if (!fs.exists(directory)) {
         fs.makeTree(directory);
     }
@@ -18,30 +18,30 @@ var makeFile = function() {
     assert.isTrue(fs.isFile(path));
 };
 
-var getAbsolutePath = function() {
+const getAbsolutePath = function() {
     Array.prototype.unshift.call(arguments, WORK_DIR);
     return changeSeparator(fs.resolve(fs.join.apply(null, arguments)));
 };
 
-var changeSeparator = function(path) {
+const changeSeparator = function(path) {
     if (separator !== "/") {
         return path.replace(separator, "/", "g");
     }
     return path;
 };
 
-var changeWorkingDirectory = function(path) {
+const changeWorkingDirectory = function(path) {
     java.lang.System.setProperty('user.dir', path);
 };
 
-var fixSeparator = function(arg) {
+const fixSeparator = function(arg) {
     if (Array.isArray(arg)) {
         return arg.map(changeSeparator);
     }
     return changeSeparator(arg);
 };
 
-var equals = function(arr1, arr2, comment) {
+const equals = function(arr1, arr2, comment) {
     if (!Array.isArray(arr1)) {
         arr1 = [arr1];
     }
@@ -51,8 +51,8 @@ var equals = function(arr1, arr2, comment) {
     assert.deepEqual(arr1, arr2.sort(), comment || "");
 };
 
-var list = function() {
-    var path = Array.prototype.join.call(arguments, separator);
+const list = function() {
+    const path = Array.prototype.join.call(arguments, separator);
     return fs.list(path || fs.workingDirectory()).filter(function(file) {
         return file.charAt(0) !== ".";
     }).map(function(file) {
@@ -99,7 +99,7 @@ exports.tearDown = function() {
 };
 
 exports.testGlob = function() {
-    var tests = [
+    const tests = [
         {
             "pattern": "a",
             "expected": ["a"]
@@ -133,7 +133,7 @@ exports.testGlob = function() {
 };
 
 exports.testGlobList = function() {
-    var tests = [
+    const tests = [
         {
             "pattern": "{aab,aac}/F",
             "expected": [
@@ -159,7 +159,7 @@ exports.testGlobList = function() {
 };
 
 exports.testGlobOneDirectory = function() {
-    var tests = [
+    const tests = [
         {
             "pattern": "a*",
             "expected": ["a", "aab", "aaa", "aac"]
@@ -195,7 +195,7 @@ exports.testGlobOneDirectory = function() {
 };
 
 exports.testGlobNestedDirectory = function() {
-    var tests = [
+    const tests = [
         {
             "pattern": "a/bcd/E*",
             "expected": ["a/bcd/EF"]
@@ -211,7 +211,7 @@ exports.testGlobNestedDirectory = function() {
 };
 
 exports.testGlobDirectoryNames = function() {
-    var tests = [
+    const tests = [
         {
             "pattern": "*/D",
             "expected": ["a/D"]
@@ -240,7 +240,7 @@ exports.testGlobDirectoryNames = function() {
 
 exports.testGlobDirectoryWithTrailingSlash = function() {
     // Patterns ending with a slash shouldn't match non-dirs
-    var tests = [
+    const tests = [
         {
             "pattern": "*ZZ",
             "expected": []
@@ -264,7 +264,7 @@ exports.testGlobDirectoryWithTrailingSlash = function() {
 };
 
 exports.testGlobStar = function() {
-    var tests = [
+    const tests = [
         {
             "pattern": "**",
             "expected": [
@@ -356,7 +356,7 @@ exports.testGlobStar = function() {
 };
 
 exports.testGlobStarAbsolute = function() {
-    var tests = [
+    const tests = [
         {
             "pattern": "**",
             "expected": [
@@ -414,7 +414,7 @@ exports.testGlobStarAbsolute = function() {
     ];
     changeWorkingDirectory(TMP_DIR);
     tests.forEach(function(test, idx) {
-        var expected = test.expected.map(function(path) {
+        const expected = test.expected.map(function(path) {
             return getAbsolutePath(path);
         });
         equals(glob(getAbsolutePath(test.pattern)), expected,
@@ -423,16 +423,11 @@ exports.testGlobStarAbsolute = function() {
 };
 
 exports.testIgnore = function() {
-    var tests = [
+    const tests = [
         {
             "pattern": "**",
             "expected": [
                 "ZZZ",
-                "a/D",
-                "a/bcd",
-                "a/bcd/EF",
-                "a/bcd/efg",
-                "a/bcd/efg/ha",
                 "aaa",
                 "aaa/zzzF",
                 "aab",
@@ -468,5 +463,6 @@ exports.testIgnore = function() {
 };
 
 if (require.main == module.id) {
-    system.exit(require('test').run(exports));
+    system.exit(require("test").run.apply(null,
+            [exports].concat(system.args.slice(1))));
 }
